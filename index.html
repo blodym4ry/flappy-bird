@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #70c5ce;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
+<script>
+// Oyun ayarları
+const config = {
+    type: Phaser.AUTO,
+    width: 400,
+    height: 600,
+    physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 600 },
+            debug: false
+        }
+    },
+    scene: {
+        preload: preload,
+        create: create,
+        update: update
+    }
+};
+
+const game = new Phaser.Game(config);
+let bird;
+let pipes;
+let cursors;
+let score = 0;
+let scoreText;
+
+function preload() {
+    // Kuş ve boru resimlerini yüklüyoruz
+    this.load.image('bird', 'https://examples.phaser.io/assets/sprites/bird.png');
+    this.load.image('pipe', 'https://examples.phaser.io/assets/sprites/pipe.png');
+}
+
+function create() {
+    // Kuşu oluşturuyoruz
+    bird = this.physics.add.sprite(100, 245, 'bird');
+    bird.setCollideWorldBounds(true);  // Kuşun ekran dışına çıkmasını engelliyoruz
+
+    // Boruları oluşturuyoruz
+    pipes = this.physics.add.group();
+
+    // Her 1.5 saniyede bir yeni bir boru ekleyelim
+    this.time.addEvent({
+        delay: 1500,
+        callback: addPipeRow,
+        callbackScope: this,
+        loop: true
+    });
+
+    // Klavye kontrolleri
+    cursors = this.input.keyboard.createCursorKeys();
+
+    // Skoru ekrana yazıyoruz
+    scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '32px', fill: '#000' });
+}
+
+function update() {
+    // Kuşu zıplatmak için boşluk tuşuna basıldığında
+    if (cursors.space.isDown) {
+        bird.setVelocityY(-350);  // Yukarı doğru hız veriyoruz
+    }
+
+    // Boruları sola doğru hareket ettiriyoruz
+    Phaser.Actions.IncX(pipes.getChildren(), -2);
+
+    // Borular ekran dışına çıktığında onları yok edelim
+    pipes.getChildren().forEach(pipe => {
+        if (pipe.x < -50) {
+            pipe.destroy();
+        }
+    });
+
+    // Skoru güncelleyip ekrana yazalım
+    score++;
+    scoreText.setText('Score: ' + score);
+}
+
+function addPipeRow() {
+    // Boruların geçmesi gereken boşluğun rastgele olduğu bir aralık oluşturalım
+    const pipeHole = Phaser.Math.Between(150, 450);
+    const pipeTop = pipes.create(400, pipeHole - 150, 'pipe');
+    const pipeBottom = pipes.create(400, pipeHole + 150, 'pipe');
+
+    // Boruların sabit olmasını sağlayalım, kuş çarparsa sabit kalacaklar
+    pipeTop.setImmovable(true);
+    pipeBottom.setImmovable(true);
+}
+</script>
+
+</body>
+</html>
